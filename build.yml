@@ -1,0 +1,43 @@
+---
+- name: Build a CA with SSL on the Control Node
+  hosts: servers
+  become: yes
+  tasks:
+    - name: Ensure OpenSSL is installed (Debian/Ubuntu)
+      apt:
+        name: openssl
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure OpenSSL is installed (RedHat/CentOS)
+      yum:
+        name: openssl
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Create a directory for the CA
+      file:
+        path: "/etc/ssl/myCA"
+        state: directory
+        mode: "0755"
+
+    - name: Generate a private key for the CA
+      command: openssl genrsa -out /etc/ssl/myCA/myCA.key 2048
+      args:
+         creates: /etc/ssl/myCA/myCA.key
+
+    - name: Generate a self-signed CA certificate
+      command: >
+        openssl req -x509 -new -nodes -key /etc/ssl/myCA/myCA.key
+        -sha256 -days 1024 -out /etc/ssl/myCA/myCA.crt
+        -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=myca.local"
+      args:
+         creates: /etc/ssl/myCA/myCA.crt
+
+    - name: Verify the CA certificate
+      command: openssl x509 -in /etc/ssl/myCA/myCA.crt -text -noout
+      register: ca_cert
+
+    - name: Display the CA certificate details
+      debug:
+        msg: "{{ ca_cert.stdout }}"
