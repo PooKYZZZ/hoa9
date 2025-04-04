@@ -1,6 +1,6 @@
 ---
 - name: Build a CA with SSL on the Control Node
-  hosts: control
+  hosts: servers
   become: yes
   tasks:
     - name: Ensure OpenSSL is installed
